@@ -1,0 +1,72 @@
+---
+title: Checking URLs for UK Higher Education Institution Research Data Management
+  Policies, 2009-2016
+author: "Laurence Horton"
+date: "02/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Load packages
+```{r packages}
+library(tidyverse)
+```
+
+Get the data
+```{r get data}
+policies <-
+  read.csv(
+    "https://reshare.ukdataservice.ac.uk/852487/8/ukhei-rdmpolicies-2016-10-quant.csv"
+  ) # read in spreadsheet
+urls <- as.character(policies$hyperlink) # Just keep the URL column.
+```
+
+Function to test URLs
+```{r function for testing URLs}
+url_works <- function(url_in, t = 2) {
+  con <- url(url_in)
+  check <-
+    suppressWarnings(try(open.connection(con, open = "rt", timeout = t), silent = TRUE)
+                     [1])
+  suppressWarnings(try(close.connection(con), silent = TRUE)
+  )
+  ifelse(is.null(check), TRUE, FALSE)
+}
+
+result <- sapply(urls, url_works) # Write results
+```
+
+Result of URL test
+```{r results}
+result <- as.data.frame(result) # Convert results to data frame
+
+result$Hyperlink <- row.names(result) # Convert row names to column
+row.names(result) <- NULL # Remove row names
+totals <-
+  as.data.frame(table(result$result)) # Count number of TRUE and FALSE cases
+totals <-
+  totals %>% rename(Status = Var1) %>% mutate(Pct = Freq / sum(Freq) * 100)
+totals$Pct <- round(totals$Pct, digits = 1) # Round percentage for viewing
+totals
+```
+
+## Citations
+
+### Data
+Horton, L. (2018). UK Higher Education Institution Research Data Management Policies, 2009-2016. [Data Collection]. Colchester, Essex: UK Data Archive. https://doi.org/10.5255/UKDA-SN-851566
+
+### R packages  
+R Core Team. (2018). *R: A Language and Environment for Statistical Computing. R Foundation for Statistical Computing*, https://www.R-project.org/  
+
+Wickham, H. et. al. (2019). Welcome to the {tidyverse}, *Journal of Open Source Software, 4*(43), 1686. https://doi.org/10.21105/joss.01686
+
+Xie, Y. (2021). knitr: A General-Purpose Package for Dynamic Report Generation in R, *R package version 1.31*, https://yihui.org/knitr/
+
+```{r citations, include = FALSE}
+toBibtex(citation("base"))
+toBibtex(citation("tidyverse"))
+toBibtex(citation("rmarkdown"))
+```
